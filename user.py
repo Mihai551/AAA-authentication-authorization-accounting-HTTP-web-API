@@ -1,4 +1,5 @@
 import mysql
+from datetime import datetime
 
 db = mysql.connector.connect(
     host="localhost",
@@ -35,6 +36,7 @@ def user_match(username):
         if row[0] == username:
             x = True
             break
+    db.commit()
     return x
 
 def match(username, password):
@@ -46,4 +48,19 @@ def match(username, password):
         if row[0] == username and row[1] == password:
             x = True
             break
+    db.commit()
     return x
+
+
+def authorize(list):
+    for user in list:
+        return user.authorization
+
+def log (list, service):
+    #time = datetime.now().day.__str__() +'.'+ datetime.now().month.__str__() +'.'+ datetime.now().year.__str__()
+    #print(time)
+    for user in list:
+        mycursor.execute("INSERT INTO log(username, accessed_service, time) VALUES(%s,%s,%s)",
+                         (user.username, service, datetime.now()) )
+        db.commit()
+
