@@ -53,10 +53,11 @@ def login():
 
         current_user = user(request.get_json()['username'], request.get_json()['password'])
         current_user.get_authorization()
-        return {"Successfully logged in"
-             "Your authorization is:":str(current_user.authorization) }
+        x = {"Successfully logged in":current_user.username,
+             "Your authorization is:":current_user.authorization}
+        return x
     else:
-        return jsonify('Username or password doesn\'t match' + current_user.authorization)
+        return jsonify('Username or password doesn\'t match')
 
 @app.route('/logout', methods  = ['POST'] )
 def logout():
