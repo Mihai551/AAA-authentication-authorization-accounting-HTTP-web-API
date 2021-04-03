@@ -38,10 +38,19 @@ def rows_from_table(mycursor, table, db):
     return records
 
 
+def row_from_table(column, variable, mycursor, table, db):
+
+    """Returns the rows of a table"""
+
+    mycursor.execute(f"SELECT * FROM {table} WHERE {column} LIKE '%{variable}%';")
+    records = mycursor.fetchall()
+    db.commit()
+    return records
+
 def user_match(username, mycursor, table, db):
     """Checks if the username is already used"""
     x = False
-    for row in rows_from_table(mycursor, table ,db):
+    for row in row_from_table('username', username ,mycursor, table ,db):
         if row[0] == username:
             x = True
             break
@@ -53,7 +62,7 @@ def match(username, password, mycursor, table, db):
     """Checks if username and password match"""
     x = False
 
-    for row in rows_from_table(mycursor, table ,db):
+    for row in row_from_table('username', username, mycursor, table ,db):
         if row[0] == username and row[1] == password:
             x = True
             break

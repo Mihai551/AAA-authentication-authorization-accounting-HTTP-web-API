@@ -53,7 +53,6 @@ def login():
         current_user.get_authorization(mycursor, 'table1', db)
         store_current_user.append(current_user)
         log(store_current_user, 'login', mycursor, 'log', db)
-        print(store_current_user) #for check
         return {"Successfully logged in":current_user.username,
              "Your authorization is:":current_user.authorization}
     else:
