@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 import mysql.connector
-from user import user, user_match, match, log, access
+from user import user, user_match, match, log, access, change
 
 app = Flask(__name__)
 
@@ -38,6 +38,12 @@ def register():
     else:
         mycursor.execute("INSERT INTO table1(username, password) VALUES(%s,%s)", (request.get_json()['username'], request.get_json()['password']))
         db.commit()
+
+        current_user = user(request.get_json()['username'], request.get_json()['password'])
+        current_user.get_authorization(mycursor, 'table1', db)
+        store_current_user.append(current_user)
+        log(store_current_user, 'register', mycursor, 'log', db)
+
         return jsonify('Successfully registered')
 
 
@@ -76,5 +82,23 @@ def logs():
     """Returns logs list"""
     return access(store_current_user,'logs', mycursor, 'log', 'log', db)
 
+@app.route('/change_password', methods  = ['POST'] )
+def change_password():
+    """Change your password"""
+    if store_current_user.__len__():
+        for user in store_current_user:
+            if request.get_json()['password']==user.password and request.get_json()['new password'] == request.get_json()['confirm new password']:
+                user.password = request.get_json()['new password']
+                change(column_to_find='username', attribute_to_find=user.username, column_to_change='password', attribute_to_change=user.password, mycursor=mycursor, table='table1', db=db)
+                log(store_current_user,'change_password', mycursor, 'log', db)
+                return jsonify('Your password was successfully changed')
+
+            elif request.get_json()['password']!=user.password:
+                return jsonify('Wrong password')
+
+            elif request.get_json()['new password'] != request.get_json()['confirm new password']:
+                return jsonify("'new password' and 'confirm new password' must match")
+    else:
+        return  jsonify('You are not logged in' )
 
 app.run(debug=True)

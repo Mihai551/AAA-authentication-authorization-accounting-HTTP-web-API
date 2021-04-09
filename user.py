@@ -30,7 +30,7 @@ def access(store_current_user,service, mycursor, logs_table, table_to_read, db):
 
 def rows_from_table(mycursor, table, db):
 
-    """Returns the rows of a table"""
+    """Returns the rows from a table"""
 
     mycursor.execute(f"SELECT * FROM {table};")
     records = mycursor.fetchall()
@@ -40,7 +40,7 @@ def rows_from_table(mycursor, table, db):
 
 def row_from_table(column, variable, mycursor, table, db):
 
-    """Returns the rows of a table"""
+    """Returns a row from a table"""
 
     mycursor.execute(f"SELECT * FROM {table} WHERE {column} LIKE '%{variable}%';")
     records = mycursor.fetchall()
@@ -82,3 +82,9 @@ def log (list, service, mycursor, table, db):
         mycursor.execute(f"INSERT INTO {table}(username, accessed_service, time) VALUES(%s,%s,%s)",
                          (user.username, service, datetime.now()) )
         db.commit()
+
+
+def change (column_to_find, attribute_to_find, column_to_change, attribute_to_change, mycursor, table, db):
+    """change a VALUE from a table"""
+    mycursor.execute(f"UPDATE {table} SET {column_to_change} = '{attribute_to_change}' WHERE {column_to_find} LIKE '%{attribute_to_find}%';")
+    db.commit()
