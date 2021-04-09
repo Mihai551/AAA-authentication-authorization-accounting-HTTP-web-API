@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask import jsonify
+from requests import get
 
 
 class user():
@@ -78,9 +79,8 @@ def authorize(list):
 def log (list, service, mycursor, table, db):
     """Records the actions"""
     for user in list:
-
-        mycursor.execute(f"INSERT INTO {table}(username, accessed_service, time) VALUES(%s,%s,%s)",
-                         (user.username, service, datetime.now()) )
+        mycursor.execute(f"INSERT INTO {table}(username, accessed_service, time, ‬IP) VALUES(%s,%s,%s,%s)",
+                         (user.username, service, datetime.now(), get('https://api.ipify.org').text))
         db.commit()
 
 
