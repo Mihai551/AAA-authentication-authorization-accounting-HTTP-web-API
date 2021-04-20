@@ -84,7 +84,12 @@ def log (list, service, mycursor, table, db):
         db.commit()
 
 
-def change (column_to_find, attribute_to_find, column_to_change, attribute_to_change, mycursor, table, db):
+def change(column_to_find, attribute_to_find, column_to_change, attribute_to_change, mycursor, table, db):
     """change a VALUE from a table"""
     mycursor.execute(f"UPDATE {table} SET {column_to_change} = '{attribute_to_change}' WHERE {column_to_find} LIKE '%{attribute_to_find}%';")
     db.commit()
+
+def delete_row(column, attribute, mycursor, table, db):
+    mycursor.execute(f"DELETE FROM {table} WHERE {column} LIKE '{attribute}';")
+    db.commit()
+

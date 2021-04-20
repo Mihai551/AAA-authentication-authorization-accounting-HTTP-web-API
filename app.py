@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 import mysql.connector
-from user import user, user_match, match, log, access, change
+from user import *
 
 app = Flask(__name__)
 
@@ -54,15 +54,18 @@ def login():
     if store_current_user.__len__() > 0:
         return jsonify('You are already logged in')
 
-    if match(request.get_json()['username'], request.get_json()['password'], mycursor,'table1', db):
-        current_user = user(request.get_json()['username'], request.get_json()['password'])
-        current_user.get_authorization(mycursor, 'table1', db)
-        store_current_user.append(current_user)
-        log(store_current_user, 'login', mycursor, 'log', db)
-        return {"Successfully logged in":current_user.username,
-             "Your authorization is:":current_user.authorization}
+    if row_from_table('IP', get('https://api.ipify.org').text, mycursor, 'banned_ip_addresses', db):
+        return jsonify('This IP is banned')
     else:
-        return jsonify('Username or password doesn\'t match')
+        if match(request.get_json()['username'], request.get_json()['password'], mycursor,'table1', db):
+            current_user = user(request.get_json()['username'], request.get_json()['password'])
+            current_user.get_authorization(mycursor, 'table1', db)
+            store_current_user.append(current_user)
+            log(store_current_user, 'login', mycursor, 'log', db)
+            return {"Successfully logged in":current_user.username,
+                 "Your authorization is:":current_user.authorization}
+        else:
+            return jsonify('Username or password doesn\'t match')
 
 
 
@@ -100,5 +103,33 @@ def change_password():
                 return jsonify("'new password' and 'confirm new password' must match")
     else:
         return  jsonify('You are not logged in' )
+
+
+@app.route('/ban_ip', methods  = ['POST'] )
+def ban_ip():
+    """BAN IP addresses"""
+    if authorize(store_current_user):
+        if row_from_table('IP', request.get_json()['IP'], mycursor, 'banned_ip_addresses', db):
+            return jsonify("This IP is already banned")
+        else:
+            mycursor.execute("INSERT INTO banned_ip_addresses(IP) VALUES ('"+request.get_json()['IP']+"');")
+            db.commit()
+            return jsonify("IP address successfully banned")
+
+    else:
+        return jsonify("You don't have access")
+
+
+@app.route('/unban_ip', methods  = ['POST'] )
+def unban_ip():
+    if authorize(store_current_user):
+        if row_from_table('IP', request.get_json()['IP'], mycursor, 'banned_ip_addresses', db):
+            delete_row('IP', request.get_json()['IP'], mycursor, 'banned_ip_addresses', db)
+            return jsonify("IP address successfully unbanned")
+        else:
+            return jsonify("IP address can't be found")
+
+    else:
+        return jsonify("You don't have access")
 
 app.run(debug=True)
