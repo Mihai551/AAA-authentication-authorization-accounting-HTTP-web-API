@@ -114,6 +114,7 @@ def ban_ip():
         else:
             mycursor.execute("INSERT INTO banned_ip_addresses(IP) VALUES ('"+request.get_json()['IP']+"');")
             db.commit()
+            log(store_current_user, 'ban_ip', mycursor, 'log', db)
             return jsonify("IP address successfully banned")
 
     else:
@@ -125,6 +126,7 @@ def unban_ip():
     if authorize(store_current_user):
         if row_from_table('IP', request.get_json()['IP'], mycursor, 'banned_ip_addresses', db):
             delete_row('IP', request.get_json()['IP'], mycursor, 'banned_ip_addresses', db)
+            log(store_current_user, 'unban_ip', mycursor, 'log', db)
             return jsonify("IP address successfully unbanned")
         else:
             return jsonify("IP address can't be found")
