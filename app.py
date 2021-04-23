@@ -1,9 +1,18 @@
 from flask import Flask, jsonify, request
 import mysql.connector
 from user import *
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
+mail= Mail(app)
 
+app.config['MAIL_SERVER']='smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'mihai.api.mails@gmail.com'
+app.config['MAIL_PASSWORD'] = 'pythonapi56'
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+mail = Mail(app)
 
 db = mysql.connector.connect(
     host="localhost",
@@ -20,7 +29,6 @@ store_current_user = []
 
 @app.route('/')
 def Welcome():
-
     return "Welcome!"
 
 
@@ -33,16 +41,23 @@ def users():
 @app.route('/register', methods  = ['POST'] )
 def register():
     """Register"""
+    if email_address_match(request.get_json()['email_address'], mycursor,'table1', db):
+        return jsonify('This email address is already used')
     if user_match(request.get_json()['username'], mycursor,'table1', db):
         return jsonify('This username is already used')
     else:
-        mycursor.execute("INSERT INTO table1(username, password) VALUES(%s,%s)", (request.get_json()['username'], request.get_json()['password']))
+        mycursor.execute("INSERT INTO table1(username, password, email_address) VALUES(%s,%s,%s)",
+                         (request.get_json()['username'], request.get_json()['password'], request.get_json()['email_address']))
         db.commit()
 
-        current_user = user(request.get_json()['username'], request.get_json()['password'])
+        current_user = user(request.get_json()['email_address'], request.get_json()['username'], request.get_json()['password'])
         current_user.get_authorization(mycursor, 'table1', db)
         store_current_user.append(current_user)
         log(store_current_user, 'register', mycursor, 'log', db)
+
+        msg = Message('API', sender='mihai.api.mails@gmail.com', recipients=[current_user.email_address])
+        msg.body = (f"Hello {current_user.username},\n\nYour account was successfully created!\n\nMiai The API team")
+        mail.send(msg)
 
         return jsonify('Successfully registered')
 
@@ -123,6 +138,7 @@ def ban_ip():
 
 @app.route('/unban_ip', methods  = ['POST'] )
 def unban_ip():
+    """UNBAN IP addresses"""
     if authorize(store_current_user):
         if row_from_table('IP', request.get_json()['IP'], mycursor, 'banned_ip_addresses', db):
             delete_row('IP', request.get_json()['IP'], mycursor, 'banned_ip_addresses', db)

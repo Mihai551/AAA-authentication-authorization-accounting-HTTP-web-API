@@ -4,7 +4,8 @@ from requests import get
 
 
 class user():
-    def __init__(self, username, password):
+    def __init__(self, email_address, username, password,):
+        self.email_address = email_address
         self.username = username
         self.password = password
         self.authorization = 0
@@ -53,6 +54,16 @@ def user_match(username, mycursor, table, db):
     x = False
     for row in row_from_table('username', username ,mycursor, table ,db):
         if row[0] == username:
+            x = True
+            break
+    db.commit()
+    return x
+
+def email_address_match(email_address, mycursor, table, db):
+    """Checks if the username is already used"""
+    x = False
+    for row in row_from_table('email_address', email_address ,mycursor, table ,db):
+        if row[3] == email_address:
             x = True
             break
     db.commit()

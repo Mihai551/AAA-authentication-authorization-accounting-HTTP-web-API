@@ -1,10 +1,12 @@
 appdirs==1.4.4
+blinker==1.4
 certifi==2020.12.5
 chardet==4.0.0
 click==7.1.2
 distlib==0.3.1
 filelock==3.0.12
 Flask==1.1.2
+Flask-Mail==0.9.1
 idna==2.10
 itsdangerous==1.1.0
 Jinja2==2.11.3
@@ -14,6 +16,7 @@ mypy==0.812
 mypy-extensions==0.4.3
 mysql-client==0.0.1
 mysql-connector==2.2.9
+publicip==1.0.1
 requests==2.25.1
 six==1.15.0
 typed-ast==1.4.2
