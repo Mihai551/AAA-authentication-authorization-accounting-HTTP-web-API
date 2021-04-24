@@ -1,7 +1,9 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, #redirect, url_for
 import mysql.connector
 from user import *
 from flask_mail import Mail, Message
+from random_string import get_random_string
+
 
 app = Flask(__name__)
 mail= Mail(app)
@@ -9,7 +11,7 @@ mail= Mail(app)
 app.config['MAIL_SERVER']='smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'mihai.api.mails@gmail.com'
-app.config['MAIL_PASSWORD'] = 'pythonapi56'
+app.config['MAIL_PASSWORD'] = '**********'
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 mail = Mail(app)
@@ -25,7 +27,8 @@ db = mysql.connector.connect(
 mycursor = db.cursor()
 db.commit()
 store_current_user = []
-
+store_email_for_recovery = []
+store_recovery_code=[]
 
 @app.route('/')
 def Welcome():
@@ -55,8 +58,8 @@ def register():
         store_current_user.append(current_user)
         log(store_current_user, 'register', mycursor, 'log', db)
 
-        msg = Message('API', sender='mihai.api.mails@gmail.com', recipients=[current_user.email_address])
-        msg.body = (f"Hello {current_user.username},\n\nYour account was successfully created!\n\nMiai The API team")
+        msg = Message('Registration', sender='mihai.api.mails@gmail.com', recipients=[current_user.email_address])
+        msg.body = (f"Hello {current_user.username},\n\nYour account was successfully created!\n\nAPI team")
         mail.send(msg)
 
         return jsonify('Successfully registered')
@@ -149,5 +152,52 @@ def unban_ip():
 
     else:
         return jsonify("You don't have access")
+
+
+@app.route('/get_recovery_code', methods  = ['POST'] )
+def get_code():
+    """Send an email that contains the account recovery code"""
+    if row_from_table(column='email_address', variable=request.get_json()['email_address'], mycursor=mycursor, table='table1', db=db):
+        recovery_code = get_random_string(15)
+        store_recovery_code.append(recovery_code)
+        print(recovery_code)
+        store_email_for_recovery.append(request.get_json()['email_address'])
+        msg = Message('Account recovery', sender='mihai.api.mails@gmail.com', recipients=[request.get_json()['email_address']])
+        msg.body = (f"Hello,\n\nYour account recovery code is {recovery_code} !\n\nAPI team")
+        mail.send(msg)
+        return jsonify("Recovery code sent")
+
+    else: return jsonify("This email address doesn't exist")
+
+
+@app.route('/get_new_password', methods  = ['POST'] )
+def get_new_password():
+    """Change your password using account recovery code"""
+    for email_address in store_email_for_recovery:
+        print(store_recovery_code[0])
+        if (request.get_json()['recovery_code'] == store_recovery_code[0]):
+            if (request.get_json()['new password'] == request.get_json()['confirm new password']):
+                change(column_to_find = 'email_address', attribute_to_find=email_address, column_to_change = 'password',
+                       attribute_to_change = request.get_json()['new password'], mycursor = mycursor, table = 'table1', db=db)
+                store_email_for_recovery.pop()
+                store_recovery_code.pop()
+                return jsonify("Password successfully changed. Please log in.")
+
+            else:
+                store_email_for_recovery.pop()
+                return jsonify("'new password' and 'confirm new password' must match")
+
+        else:
+            store_email_for_recovery.pop()
+            store_recovery_code.pop()
+            return  jsonify("The account recovery code doesn't match")
+
+    return jsonify("You need to introduce your email address")
+
+
+
+
+
+
 
 app.run(debug=True)
