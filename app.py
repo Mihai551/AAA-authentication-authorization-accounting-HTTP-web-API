@@ -158,13 +158,23 @@ def unban_ip():
 def get_code():
     """Send an email that contains the account recovery code"""
     if row_from_table(column='email_address', variable=request.get_json()['email_address'], mycursor=mycursor, table='table1', db=db):
+
         recovery_code = get_random_string(15)
+
+        if store_recovery_code.__len__():
+            store_recovery_code.pop()
+
         store_recovery_code.append(recovery_code)
-        print(recovery_code)
+
+        if store_email_for_recovery.__len__():
+            store_email_for_recovery.pop()
+
         store_email_for_recovery.append(request.get_json()['email_address'])
+
         msg = Message('Account recovery', sender='mihai.api.mails@gmail.com', recipients=[request.get_json()['email_address']])
         msg.body = (f"Hello,\n\nYour account recovery code is {recovery_code} !\n\nAPI team")
         mail.send(msg)
+
         return jsonify("Recovery code sent")
 
     else: return jsonify("This email address doesn't exist")
@@ -179,6 +189,7 @@ def get_new_password():
             if (request.get_json()['new password'] == request.get_json()['confirm new password']):
                 change(column_to_find = 'email_address', attribute_to_find=email_address, column_to_change = 'password',
                        attribute_to_change = request.get_json()['new password'], mycursor = mycursor, table = 'table1', db=db)
+
                 store_email_for_recovery.pop()
                 store_recovery_code.pop()
                 return jsonify("Password successfully changed. Please log in.")
